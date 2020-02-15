@@ -90,3 +90,33 @@ class RawTextReader(Reader):
 
         return doc
 
+
+class RawTextReaderWithCachingEN(Reader):
+    nlp = spacy.load('en', max_length=10**6)
+    
+    def __init__(self, nlp_doc = None):
+        self.nlp_doc = nlp_doc
+
+    def get_processed_text(self, text, **kwargs):
+        if self.nlp_doc is None:
+            self.nlp_doc = RawTextReaderWithCachingEN.nlp(text)
+        return self.nlp_doc
+
+    def read(self, text, **kwargs):
+        spacy_doc = self.get_processed_text(text=text, **kwargs)
+
+        sentences = []
+        for sentence_id, sentence in enumerate(spacy_doc.sents):
+            sentences.append({
+                "words": [token.text for token in sentence],
+                "lemmas": [token.lemma_ for token in sentence],
+                "POS": [token.pos_ for token in sentence],
+                "char_offsets": [(token.idx, token.idx + len(token.text))
+                                     for token in sentence]
+            })
+
+        doc = Document.from_sentences(sentences,
+                                      input_file=kwargs.get('input_file', None),
+                                      **kwargs)
+
+        return doc

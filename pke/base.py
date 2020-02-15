@@ -5,7 +5,7 @@
 from collections import defaultdict
 
 from pke.data_structures import Candidate, Document
-from pke.readers import MinimalCoreNLPReader, RawTextReader
+from pke.readers import MinimalCoreNLPReader, RawTextReader, RawTextReaderWithCachingEN
 
 from nltk.stem.snowball import SnowballStemmer
 from nltk import RegexpParser
@@ -61,6 +61,8 @@ class LoadFile(object):
 
         self.stoplist = None
         """List of stopwords."""
+        
+        self.parser = None
 
     def load_document(self, input, **kwargs):
         """Loads the content of a document/string/stream in a given language.
@@ -95,12 +97,14 @@ class LoadFile(object):
                 # an xml file is considered as a CoreNLP document
                 if input.endswith('xml'):
                     parser = MinimalCoreNLPReader()
+                    self.parser = parser
                     doc = parser.read(path=input, **kwargs)
                     doc.is_corenlp_file = True
 
                 # other extensions are considered as raw text
                 else:
                     parser = RawTextReader(language=language)
+                    self.parser = parser
                     encoding = kwargs.get('encoding', 'utf-8')
                     with codecs.open(input, 'r', encoding=encoding) as file:
                         text = file.read()
@@ -108,7 +112,8 @@ class LoadFile(object):
 
             # if input is a string
             else:
-                parser = RawTextReader(language=language)
+                parser = RawTextReaderWithCachingEN()
+                self.parser = parser
                 doc = parser.read(text=input, **kwargs)
 
         elif getattr(input, 'read', None):
@@ -116,10 +121,12 @@ class LoadFile(object):
             name = getattr(input, 'name', None)
             if name and name.endswith('xml'):
                 parser = MinimalCoreNLPReader()
+                self.parser = parser
                 doc = parser.read(path=input, **kwargs)
                 doc.is_corenlp_file = True
             else:
                 parser = RawTextReader(language=language)
+                self.parser = parser
                 doc = parser.read(text=input.read(), **kwargs)
 
         else:
@@ -153,6 +160,9 @@ class LoadFile(object):
         if getattr(doc, 'is_corenlp_file', False):
             self.normalize_pos_tags()
             self.unescape_punctuation_marks()
+
+    def get_parser(self):
+        return self.parser
 
     def apply_stemming(self):
         """Populates the stem containers of sentences."""
