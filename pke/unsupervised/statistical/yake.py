@@ -252,7 +252,7 @@ class YAKE(LoadFile):
         # compute statistics
         mean_TF = numpy.mean(TF_nsw)
         std_TF = numpy.std(TF_nsw)
-        max_TF = max(TF)
+        max_TF = max(TF, default=9999)
 
         # Loop through the words
         for word in self.words:
