@@ -17,23 +17,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import gzip
 import os
-import pickle
 import logging
 
 import networkx as nx
 import numpy as np
 import six
 from scipy.spatial.distance import cosine
-from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 
+import pke.utils
 from pke.unsupervised import SingleRank
 
 
 class TopicalPageRank(SingleRank):
-    """Single TopicalPageRank keyphrase extraction model. 
+    """Single TopicalPageRank keyphrase extraction model.
 
     Parameterized example::
 
@@ -90,7 +88,7 @@ class TopicalPageRank(SingleRank):
             corresponding scores are summed and ranked. ...
 
         Args:
-            grammar (str): grammar defining POS patterns of NPs, defaults to 
+            grammar (str): grammar defining POS patterns of NPs, defaults to
                 "NP: {<ADJ>*<NOUN|PROPN>+}".
         """
 
@@ -121,6 +119,8 @@ class TopicalPageRank(SingleRank):
             normalized (False): normalize keyphrase score by their length,
                 defaults to False.
         """
+        if not self.candidates:
+            return
 
         if pos is None:
             pos = {'NOUN', 'PROPN', 'ADJ'}
@@ -135,9 +135,6 @@ class TopicalPageRank(SingleRank):
         self.build_word_graph(window=window,
                               pos=pos)
 
-        # create a blank model
-        model = LatentDirichletAllocation()
-
         # set the default LDA model if none provided
         if lda_model is None:
             if six.PY2:
@@ -149,11 +146,7 @@ class TopicalPageRank(SingleRank):
             logging.warning('LDA model is hard coded to {}'.format(lda_model))
 
         # load parameters from file
-        with gzip.open(lda_model, 'rb') as f:
-            (dictionary,
-             model.components_,
-             model.exp_dirichlet_component_,
-             model.doc_topic_prior_) = pickle.load(f)
+        dictionary, model = pke.utils.load_lda_model(lda_model)
 
         # build the document representation
         doc = []
@@ -191,9 +184,10 @@ class TopicalPageRank(SingleRank):
 
         # get the default probability for OOV words
         default_similarity = min(W.values())
+        # set the default probability for OOV words
         for word in self.graph.nodes():
             if word not in W:
-                W[word] = 0.0
+                W[word] = default_similarity
 
         # Normalize the topical word importance of words
         norm = sum(W.values())

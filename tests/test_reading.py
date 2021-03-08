@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import pke
 import codecs
 
 model = pke.unsupervised.TopicRank
 
-xml_test_file = 'tests/data/1939.xml'
-raw_test_file = 'tests/data/1939.txt'
+data_path = os.path.join('tests', 'data')
+xml_test_file = data_path + os.sep + '1939.xml'
+raw_test_file = data_path + os.sep + '1939.txt'
 
 
 def test_reading():
@@ -26,14 +28,13 @@ def test_reading():
         text = f.read()
     extr3.load_document(text)
 
-    # loading from stream
-    extr4 = model()
-    with codecs.open(raw_test_file, 'r', 'utf-8') as f:
-        extr4.load_document(f)
+    assert len(extr1.sentences) == 4 and extr2.sentences == extr3.sentences
 
-    assert len(extr1.sentences) == 4 and \
-           extr2.sentences == extr3.sentences == extr4.sentences
 
+def test_french_model():
+    extr = model()
+    extr.load_document('est-ce')
+    assert '' not in extr.sentences[0].pos
 
 if __name__ == '__main__':
     test_reading()

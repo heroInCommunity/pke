@@ -94,11 +94,8 @@ class ExpandRank(SingleRank):
         doc = LoadFile()
 
         # read document
-        doc.load_document(input=input_file,
-                          language=self.language,
-                          normalization=self.normalization)
-
-        # flatten document and initialize nodes 
+        doc.load_document(input=input_file, language=self.language, normalization=self.normalization)
+        # flatten document and initialize nodes
         sequence = []
 
         for sentence in doc.sentences:
@@ -153,7 +150,6 @@ class ExpandRank(SingleRank):
                                    similarity=similarity,
                                    window=window,
                                    pos=pos)
-
         # compute the word scores using random walk
         w = nx.pagerank_scipy(self.graph, alpha=0.85, weight='weight')
 

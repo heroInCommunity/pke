@@ -198,6 +198,8 @@ class TopicRank(LoadFile):
                 ties).
 
         """
+        if not self.candidates:
+            return
 
         # cluster the candidates
         self.topic_clustering(threshold=threshold, method=method)
@@ -225,7 +227,8 @@ class TopicRank(LoadFile):
 
                 # offsets of the indexes
                 indexes_offsets = [offsets[j] for j in indexes]
-                most_frequent = indexes_offsets.index(min(indexes_offsets))
+                # Choosing the first occuring most frequent candidate
+                most_frequent = offsets.index(min(indexes_offsets))
                 self.weights[topic[most_frequent]] = w[i]
 
             else:
